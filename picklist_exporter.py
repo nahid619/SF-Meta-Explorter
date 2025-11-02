@@ -7,7 +7,7 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment
 from openpyxl.utils import get_column_letter
 
-from config import API_VERSION
+#from config import API_VERSION
 from models import FieldInfo, PicklistValueDetail, ProcessingResult
 from salesforce_client import SalesforceClient
 
@@ -21,6 +21,9 @@ class PicklistExporter:
         self.sf = sf_client.sf
         self.base_url = sf_client.base_url
         self.headers = sf_client.headers
+        self.api_version = sf_client.get_api_version()
+        self._log_status(f"📊 PicklistExporter using API v{self.api_version}")
+
     
     def export_picklists(self, object_names: List[str], output_path: str) -> Tuple[str, Dict]:
         """Export picklist values for specified objects"""
@@ -130,7 +133,7 @@ class PicklistExporter:
         """Resolve EntityDefinition ID for an object"""
         try:
             query = f"SELECT Id FROM EntityDefinition WHERE QualifiedApiName = '{object_name}'"
-            url = f"{self.base_url}/services/data/v{API_VERSION}/tooling/query/"
+            url = f"{self.base_url}/services/data/v{self.api_version}/tooling/query/"
             response = requests.get(url, headers=self.headers, params={'q': query}, timeout=60)
             if response.status_code == 200:
                 records = response.json().get('records', [])
@@ -166,7 +169,7 @@ class PicklistExporter:
         """Query using FieldDefinition"""
         try:
             query = f"SELECT Metadata FROM FieldDefinition WHERE EntityDefinition.QualifiedApiName = '{object_name}' AND QualifiedApiName = '{field_name}'"
-            url = f"{self.base_url}/services/data/v{API_VERSION}/tooling/query/"
+            url = f"{self.base_url}/services/data/v{self.api_version}/tooling/query/"
             response = requests.get(url, headers=self.headers, params={'q': query}, timeout=60)
             if response.status_code == 200:
                 records = response.json().get('records', [])
@@ -181,7 +184,7 @@ class PicklistExporter:
         try:
             dev_name = field_name[:-3] if field_name.endswith('__c') else field_name
             query = f"SELECT Metadata FROM CustomField WHERE TableEnumOrId = '{entity_def_id}' AND DeveloperName = '{dev_name}'"
-            url = f"{self.base_url}/services/data/v{API_VERSION}/tooling/query/"
+            url = f"{self.base_url}/services/data/v{self.api_version}/tooling/query/"
             response = requests.get(url, headers=self.headers, params={'q': query}, timeout=60)
             if response.status_code == 200:
                 records = response.json().get('records', [])
@@ -196,7 +199,7 @@ class PicklistExporter:
         try:
             dev_name = field_name[:-3] if field_name.endswith('__c') else field_name
             query = f"SELECT Metadata FROM CustomField WHERE TableEnumOrId = '{object_name}' AND DeveloperName = '{dev_name}'"
-            url = f"{self.base_url}/services/data/v{API_VERSION}/tooling/query/"
+            url = f"{self.base_url}/services/data/v{self.api_version}/tooling/query/"
             response = requests.get(url, headers=self.headers, params={'q': query}, timeout=60)
             if response.status_code == 200:
                 records = response.json().get('records', [])
@@ -209,7 +212,7 @@ class PicklistExporter:
     def _query_rest_describe_for_picklist(self, object_name: str, field_name: str) -> List[PicklistValueDetail]:
         """Query using REST describe endpoint"""
         try:
-            url = f"{self.base_url}/services/data/v{API_VERSION}/sobjects/{object_name}/describe"
+            url = f"{self.base_url}/services/data/v{self.api_version}/sobjects/{object_name}/describe"
             response = requests.get(url, headers=self.headers, timeout=60)
             if response.status_code == 200:
                 for field in response.json().get('fields', []):

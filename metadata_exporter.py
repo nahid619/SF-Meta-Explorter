@@ -15,8 +15,10 @@ class MetadataExporter:
         """Initialize with Salesforce client"""
         self.sf_client = sf_client
         self.sf = sf_client.sf
+        self.api_version = sf_client.get_api_version()
         # Field Usage Track
         self.usage_tracker = FieldUsageTracker(self.sf, sf_client.status_callback)
+        self._log_status(f"📋 MetadataExporter using API v{self.api_version}")
     
     def export_metadata(self, object_names: List[str], output_path: str) -> Tuple[str, Dict]:
         """Export metadata for specified objects"""
